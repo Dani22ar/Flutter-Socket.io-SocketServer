@@ -1,19 +1,50 @@
 const {io} = require('../index');
 
+const Band = require('../Models/band');
+const Bands = require('../Models/bands');
+
+const bands = new Bands();
+
+bands.addBand(new Band('Queen'));
+bands.addBand(new Band('Bon Jovi'));
+bands.addBand(new Band('Heroes del silencio'));
+bands.addBand(new Band('Metallica'));
+
+console.log(bands);
+
 // Mensajes de sockets
 io.on('connection', client => {
    
     console.log('Cliente conectado');
+    client.emit('active-bands', bands.getBands());
  
     client.on('disconnect', () => {
-       console.log('Cliente desconectado');
+      console.log('Cliente desconectado');
     });
  
     client.on('mensaje', (payload)=> {
-       console.log('Mensaje recibido!!!', payload);
+      console.log('Mensaje recibido!!!', payload);
+      io.emit('mensaje', {admin: 'Nuevo mensaje'});
     })
  
-    io.emit('mensaje', {admin: 'Nuevo mensaje'});
-    
+    client.on('vote-band', (payload) => {
+         
+      bands.voteBand(payload.id);
+      io.emit('active-bands', bands.getBands());
+   });   
+
+
+   client.on('add-band', (paylod)=>{
+      const newBand = new Band(paylod.name);
+      bands.addBand(newBand);
+      io.emit('active-bands', bands.getBands());
+   });
+
+   client.on('delete-band', (paylod)=>{
+      bands.deleteBand(paylod.id);
+      io.emit('active-bands', bands.getBands());
+   });
+   
+   
  });
 
